@@ -216,4 +216,70 @@ class FastParseTest extends TestSpec {
     binary.parse("1100").validation should beSuccess(("1100", 4))
     binaryNum.parse("1100").validation should beSuccess((12, 4))
   }
+
+  // Intrinsics are tools provided for convenience or performance
+  "intrinsics" should "have a 'CharPred'(icate) parser that consumes a single character that satisfies the predicate" in {
+    // 'CharPred'(icate) parser takes a Char => Boolean predicate
+    // and creates a parser that parses any single character
+    // that satisfies that predicate.
+    //
+    // e.g. you can use any of the helpful methods on scala.Char
+    // to check if a Char isUpper, isDigit, isControl, etc. etc.
+
+    val cp: Parser[String] = P(CharPred(_.isUpper).rep.! ~ "." ~ End)
+    cp.parse("ABC.").validation should beSuccess(("ABC", 4))
+
+    // parser 'cp' got applied at line: 1, index: 1
+    // parser failed at line: 1, index: 3
+    // parser expected either a '.' or something that satisfies the predicate but failed at 'c.'
+    cp.parse("ABc.").validation should haveFailure("""cp:1:1 / ("." | CharPred(<function1>)):1:3 ..."c."""")
+  }
+
+  it should "have a CharIn parser that matches any sequence of characters its configured with" in {
+    // The 'CharIn' parser is similar to the 'CharPred'(icate) parser,
+    // except you pass in sequences of valid characters rather than a predicate.
+    //
+    // As a result, it's much faster to execute
+    // than if you had used "a" | "b" | "c" | "d" | ...
+    // to combine a bunch of single-character parsers together.
+    //
+    // The same warning as CharPred about the one time cost-of-construction applies.
+
+    val ci: Parser[String] = P(CharIn("abc", "xyz").rep.! ~ End)
+    ci.parse("aaabbccxyz").validation should beSuccess(("aaabbccxyz", 10))
+    ci.parse("aaabbccdxyz.").validation should haveFailure("""ci:1:1 / (End | CharIn("abcxyz")):1:8 ..."dxyz."""")
+
+    val digits: Parser[String] = P(CharIn('0' to '9').rep.!)
+    digits.parse("12345abcde").validation should beSuccess(("12345", 5))
+    digits.parse("123abcde45").validation should beSuccess(("123", 3))
+  }
+
+  it should "have a CharsWhile parser that continually parses characters that maches the given predicate" in {
+    // The 'CharsWhile' parser is a repeated version of the 'CharPred'(icate) parser
+    // that continually chomps away at characters
+    // as long as they continue passes the given predicate.
+    //
+    // This is a very fast parser,
+    // ideal for quickly consuming large numbers of characters.
+
+    val cw: Parser[String] = P(CharsWhile(_ != ' ').!)
+    cw.parse("12345").validation should beSuccess(("12345", 5))
+    cw.parse("123 45").validation should beSuccess(("123", 3))
+  }
+
+  it should "have a StringIn parser that parses any number of strings you give it" in {
+    // The 'StringIn' parser quickly parses one of any number of strings that you give it.
+    // Behind the scenes, it converts the list of strings into a Trie
+    // so it can attempt to parse all of them in a single pass.
+    //
+    // As a result, this is much faster to execute
+    // than if you had combined the individual strings with "cow" | "cattle" | ....
+    //
+    // There is also a 'StringInIgnoreCase' parser you can use
+    // if you want to match things case-insensitively.
+
+    val si: Parser[Seq[String]] = P(StringIn("cow", "cattle").!.rep)
+    si.parse("cowcattle").validation should beSuccess((Seq("cow", "cattle"), 9))
+    si.parse("cowmoo").validation should beSuccess((Seq("cow"), 3))
+  }
 }
