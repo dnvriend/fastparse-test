@@ -32,6 +32,7 @@ object FastParseImplicits {
         failure.extra.traced.trace.failureNel[(T, Int)]
       case Parsed.Success(value, index) =>
         // index = how much was consumed from the input
+        // index = the index in the input string where the parse was performed
         (value, index).successNel[String]
     }
   }

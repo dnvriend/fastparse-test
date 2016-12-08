@@ -28,24 +28,40 @@ class FastParseTest extends TestSpec {
     // pass that stream of characters to the parser by means of the '.parse()' method.
     // The parser tries to match the stream how it is configured, here the stream is a single
     // letter 'a' and the parser matches only a single character 'a', so that sould match. 
+
     val letterA: Parser[Unit] = P("a")
     letterA.parse("a").validation should beSuccess(((), 1))
+    letterA.parse("aa").validation should beSuccess(((), 1))
+    letterA.parse("aaa").validation should beSuccess(((), 1))
+    letterA.parse("aaaa").validation should beSuccess(((), 1))
+    letterA.parse("aaaaa").validation should beSuccess(((), 1))
+    letterA.parse("aaaaaa").validation should beSuccess(((), 1))
     // the same parser, when parsing a 'stream-of-characters', here only 'b' will not 
     letterA.parse("b").validation should haveFailure("""letterA:1:1 / "a":1:1 ..."b"""")
+    letterA.parse("bb").validation should haveFailure("""letterA:1:1 / "a":1:1 ..."bb"""")
+    letterA.parse("bbb").validation should haveFailure("""letterA:1:1 / "a":1:1 ..."bbb"""")
   }
 
   it should "parse the input - a single letter - case insensitive - ignoring case" in {
     val letterA: Parser[Unit] = P(IgnoreCase("a"))
+    letterA.parse("a").validation should beSuccess(((), 1))
+    letterA.parse("aa").validation should beSuccess(((), 1))
+    letterA.parse("aaa").validation should beSuccess(((), 1))
     letterA.parse("A").validation should beSuccess(((), 1))
+    letterA.parse("AA").validation should beSuccess(((), 1))
+    letterA.parse("AAA").validation should beSuccess(((), 1))
     // parser 'letterA' was used at line: 1 index: 1
     // parser failed at line: 1 index: 1 and expected 'a' but got 'B'
+
+    letterA.parse("b").validation should haveFailure("""letterA:1:1 / "a":1:1 ..."b"""")
     letterA.parse("B").validation should haveFailure("""letterA:1:1 / "a":1:1 ..."B"""")
   }
 
-  it should "parse a sequence of letters (and combine two parsers)" in {
-    // You can combine two parsers with the ~ operator.
+  it should "parse a sequence of letters using the 'combine' operator '~'" in {
+    // You can combine two or more parsers with the 'combine' operator '~'.
     // This creates a new parser that only succeeds
-    // if both left and right parsers succeed one after another.
+    // if both left and right parsers succeed one-after-another.
+
     val ab: Parser[Unit] = P("a" ~ "b")
     ab.parse("ab").validation should beSuccess(((), 2))
     // parser 'ab' got applied at line: 1, index: 1
@@ -53,14 +69,20 @@ class FastParseTest extends TestSpec {
     // parser expected 'b' at index: 2 but got 'c'
     ab.parse("ac").validation should haveFailure("""ab:1:1 / "b":1:2 ..."c"""")
     ab.parse("bb").validation should haveFailure("""ab:1:1 / "a":1:1 ..."bb"""")
+
+    val abc: Parser[Unit] = P("a" ~ "b" ~ "c")
+    abc.parse("abc").validation should beSuccess(((), 3))
+    abc.parse("abcd").validation should beSuccess(((), 3))
+    abc.parse("abcabc").validation should beSuccess(((), 3))
+    abc.parse("abd").validation should haveFailure("""abc:1:1 / "c":1:3 ..."d"""")
   }
 
   it should "parse the input zero or more times" in {
-    // The .rep method creates a new parser that attempts to parse
+    // The '.rep' method creates a new parser that attempts to parse
     // the given parser zero or more times.
     //
     // If you want to parse something a given number of times,
-    // you can use .rep(min = 2, max = 4) o r the shorter .rep(1) for one or more times,
+    // you can use .rep(min = 2, max = 4) or the shorter .rep(1) for one or more times,
     // in addition there is exactly parameter that if it's defined behaves
     // like min and max equals to it.
     //
