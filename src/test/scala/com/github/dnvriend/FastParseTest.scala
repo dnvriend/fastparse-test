@@ -17,6 +17,8 @@
 package com.github.dnvriend
 
 import fastparse.all._
+import fastparse.parsers.Intrinsics.ElemIn
+
 import scalaz._
 import Scalaz._
 
@@ -215,6 +217,11 @@ class FastParseTest extends TestSpec {
     val binaryNum: Parser[Int] = P(binary.map(Integer.parseInt(_, 2)))
     binary.parse("1100").validation should beSuccess(("1100", 4))
     binaryNum.parse("1100").validation should beSuccess((12, 4))
+
+    val hackagePackage: ElemIn[Char, String] = CharIn('a' to 'z', 'A' to 'Z', ".")
+    val hackageVersion: ElemIn[Char, String] = CharIn('0' to '9', ".")
+    val hackageParser: Parser[(String, String)] = P(hackagePackage.rep.! ~ "-" ~ hackageVersion.rep.! ~ End)
+    hackageParser.parse("pretty-1.1.3.4").validation should beSuccess((("pretty", "1.1.3.4"), 14))
   }
 
   // Intrinsics are tools provided for convenience or performance
