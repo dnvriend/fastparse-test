@@ -18,34 +18,19 @@ package com.github.dnvriend
 
 import fastparse.all._
 import fastparse.parsers.Intrinsics.ElemIn
-
-import scalaz._
-import Scalaz._
-
-object FastParseImplicits {
-  implicit class ParserOps[+T](val that: Parsed[T]) extends AnyVal {
-    def validation = that match {
-      case failure @ Parsed.Failure(lastParser, index, extra) =>
-        // return the human-readable trace of the parse
-        // showing the stack of parsers which were in progress
-        // when the parse failed
-        // It is a one-line snippet that tells you what the state of the parser was
-        // when it failed. It contains the index where the parser was used and the index where the parser failed
-        failure.extra.traced.trace.failureNel[(T, Int)]
-      case Parsed.Success(value, index) =>
-        // index = how much was consumed from the input
-        (value, index).successNel[String]
-    }
-  }
-}
+import com.github.dnvriend.FastParseImplicits.ParserOps
 
 class FastParseTest extends TestSpec {
-  import FastParseImplicits._
 
   "fastparse" should "parse the input - a single letter - case sensitive" in {
     // The simplest parser matches a single string like eg. "a"
+    // The input to the parser, here called 'letterA' is a stream of characters and we 
+    // pass that stream of characters to the parser by means of the '.parse()' method.
+    // The parser tries to match the stream how it is configured, here the stream is a single
+    // letter 'a' and the parser matches only a single character 'a', so that sould match. 
     val letterA: Parser[Unit] = P("a")
     letterA.parse("a").validation should beSuccess(((), 1))
+    // the same parser, when parsing a 'stream-of-characters', here only 'b' will not 
     letterA.parse("b").validation should haveFailure("""letterA:1:1 / "a":1:1 ..."b"""")
   }
 
