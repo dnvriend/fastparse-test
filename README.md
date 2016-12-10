@@ -5,6 +5,9 @@ A small study project on [Li Haoyi - FastParse](https://github.com/lihaoyi/fastp
 To make sense of text, you need a way to parse it, and parser libraries such as fastparse can help you do that.
 
 ## Parsers
+In functional programming, a parser combinator is a higher-order function that accepts several parsers as input 
+and returns a new parser as its output.
+
 A parser is a function which takes an input stream of characters and yields a parse tree 
 by applying the parser logic over sections of the character stream (called [lexemes](https://en.wikipedia.org/wiki/Lexeme)) 
 to build up a composite data structure for the AST.
